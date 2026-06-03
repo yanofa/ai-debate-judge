@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>議論分析</title>
+    <style>
+        :root {
+            --bg-color: #03060f;
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            
+            --blue-card-bg: rgba(7, 19, 46, 0.9);
+            --blue-card-border: rgba(56, 189, 248, 0.25);
+            --blue-glow: rgba(56, 189, 248, 0.4);
+            --color-blue: #38bdf8;
+
+            --red-card-bg: rgba(36, 11, 19, 0.9);
+            --red-card-border: rgba(248, 113, 113, 0.25);
+            --red-glow: rgba(248, 113, 113, 0.4);
+            --color-red: #f87171;
+            
+            --panel-border: #1e293b;
+            --neutral-line: rgba(255, 255, 255, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 4px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #setup-screen {
+            width: 100%;
+            max-width: 640px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .setup-panel {
+            background: #090d1a;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            display: none;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .form-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+        .form-input {
+            background: #020617;
+            border: 1px solid #334155;
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 5px rgba(16, 185, 129, 0.4);
+        }
+        .submit-btn {
+            background: #1e293b;
+            color: #10b981;
+            border: 1px solid #10b981;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+        .submit-btn:hover {
+            background: #10b981;
+            color: #020617;
+        }
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            color: #475569;
+            font-size: 14px;
+            margin: 8px 0;
+            display: none;
+        }
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #1e293b;
+        }
+        .divider:not(:empty)::before { margin-right: 1em; }
+        .divider:not(:empty)::after { margin-left: 1em; }
+        
+        #drop-zone {
+            border: 2px dashed #334155;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            padding: 24px;
+            text-align: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        #drop-zone.dragover {
+            background: #0f172a;
+            border-color: #10b981;
+            color: var(--text-main);
+        }
+        #error-msg {
+            color: var(--color-red);
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+
+        #context-menu {
+            position: fixed;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 10000;
+            min-width: 180px;
+            overflow: hidden;
+        }
+        .context-item {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .context-item:hover {
+            background: #1e293b;
+            color: #10b981;
+        }
+
+        .app-container {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .top-gauge-container {
+            background: #090d1a;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 4px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .gauge-main-row {
+            display: grid;
+            grid-template-columns: 125px 1fr 125px;
+            width: 100%;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .side-id-label {
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1.2;
+            word-break: break-all;
+            white-space: normal;
+            text-align: center; 
+        }
+        .side-id-label.blue-side { color: var(--color-blue); text-shadow: 0 0 5px var(--blue-glow); }
+        .side-id-label.red-side { color: var(--color-red); text-shadow: 0 0 5px var(--red-glow); }
+
+        .gauge-center-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .win-rate-numbers {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 36px;
+            line-height: 1;
+        }
+        .rate-blue { color: var(--color-blue); text-shadow: 0 0 6px var(--blue-glow); }
+        .rate-red { color: var(--color-red); text-shadow: 0 0 6px var(--red-glow); text-align: right; }
+        
+        .theme-in-center {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 19px;
+            font-weight: 900;
+            color: #ffffff;
+            text-align: center;
+            padding: 0 16px;
+            letter-spacing: 0.02em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .gauge-wrapper {
+            width: 100%;
+            height: 14px;
+            background: #020617;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            position: relative;
+        }
+        .gauge-bar-blue { height: 100%; background: linear-gradient(90deg, #0284c7, var(--color-blue)); float: left; width: 50%; }
+        .gauge-bar-red { height: 100%; background: linear-gradient(90deg, var(--color-red), #dc2626); float: right; width: 50%; }
+        .gauge-center-line { position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: rgba(255,255,255,0.4); z-index: 2; }
+
+
+        .main-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto; 
+            gap: 0px; 
+        }
+
+        .camp-block {
+            padding: 6px 12px;
+            min-width: 0;
+        }
+        
+        .blue-claims-block { 
+            background: var(--blue-card-bg);
+            border: 1px solid var(--blue-card-border);
+            border-right: none;
+            border-bottom: none;
+            border-radius: 4px 0px 0px 0px;
+        }
+        .red-claims-block { 
+            background: var(--red-card-bg);
+            border: 1px solid var(--red-card-border);
+            border-left: 1px solid var(--neutral-line);
+            border-bottom: none;
+            border-radius: 0px 4px 0px 0px;
+        }
+
+        .blue-metrics-block { 
+            background: var(--blue-card-bg);
+            border: 1px solid var(--blue-card-border);
+            border-right: none;
+            border-top: none;
+            border-radius: 0px 0px 0px 4px;
+        }
+        .red-metrics-block { 
+            background: var(--red-card-bg);
+            border: 1px solid var(--red-card-border);
+            border-left: 1px solid var(--neutral-line);
+            border-top: none;
+            border-radius: 0px 0px 4px 0px;
+        }
+
+        .block-title {
+            font-size: 17.5px;
+            font-weight: 800;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 2px;
+            margin-bottom: 4px;
+            letter-spacing: 0.05em;
+        }
+
+        .claims-vertical-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 3px 4px;
+            border-radius: 4px;
+            min-width: 0;
+        }
+        .claim-text-item {
+            font-size: 16px;
+            color: #f1f5f9;
+            padding: 2px 4px; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+        .claim-text-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .claim-num-icon {
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+        .blue-claims-block .claim-num-icon { color: var(--color-blue); }
+        .red-claims-block .claim-num-icon { color: var(--color-red); }
+
+        .metrics-vertical-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .metric-row {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 3px;
+            padding: 4px 8px;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .metric-icon-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .metric-icon-box svg { 
+            width: 48px; 
+            height: 48px; 
+        }
+        .blue-metrics-block .metric-icon-box { color: var(--color-blue); filter: drop-shadow(0 0 3px var(--blue-glow)); }
+        .red-metrics-block .metric-icon-box { color: var(--color-red); filter: drop-shadow(0 0 3px var(--red-glow)); }
+
+        .metric-right-main-block {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+        
+        .metric-upper-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .metric-label { font-size: 17px; font-weight: 800; color: #ffffff; }
+        
+        .dot-meter { display: flex; gap: 4px; }
+        .score-dot { width: 16px; height: 16px; border-radius: 50%; background: #1e293b; }
+
+        .metric-lower-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: start;
+            gap: 12px;
+        }
+        
+        .metric-desc {
+            font-size: 15px;
+            color: #cbd5e1;
+            line-height: 1.3;
+            height: calc(1.3em * 3);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-align: justify;
+        }
+
+        .score-numeric-box {
+            text-align: right;
+            min-width: 48px;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 28px; 
+            line-height: 1;
+            margin-top: 8px; 
+            align-self: start;
+            flex-shrink: 0;
+        }
+        .blue-metrics-block .score-numeric-box { color: var(--color-blue); text-shadow: 0 0 4px var(--blue-glow); }
+        .red-metrics-block .score-numeric-box { color: var(--color-red); text-shadow: 0 0 4px var(--red-glow); }
+        .score-max-label {
+            font-size: 13.5px;
+            color: #64748b;
+            font-family: -apple-system, sans-serif;
+            font-weight: normal;
+            margin-left: 1px;
+        }
+
+        .summary-panel {
+            background: #090d1a;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 6px 12px;
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            align-items: center;
+            gap: 12px;
+        }
+        .summary-title-text {
+            font-size: 22px; 
+            font-weight: 900;
+            color: #eab308;
+            letter-spacing: 0.05em;
+            text-align: center;
+            border-right: 1px solid var(--panel-border);
+            padding-right: 12px;
+        }
+        .summary-body {
+            font-size: 17.5px; 
+            line-height: 1.45;
+            color: #e2e8f0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-align: justify;
+        }
+        .highlight-blue { color: var(--color-blue); font-weight: 800; }
+        .highlight-red { color: var(--color-red); font-weight: 800; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen">
+        <div class="setup-panel">
+            <div class="form-group">
+                <label class="form-label" for="api-key">Gemini API Key</label>
+                <input type="password" id="api-key" class="form-input" placeholder="AIzaSy...">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="background-text">前提となる話題</label>
+                <textarea id="background-text" class="form-input" rows="3" placeholder="議論の背景や前提をここに入力"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="debate-text">議論の本文</label>
+                <textarea id="debate-text" class="form-input" rows="8" placeholder="分析したいやり取りのテキストをここに貼り付け"></textarea>
+            </div>
+            
+            <div id="error-msg"></div>
+            
+            <button id="btn-analyze" class="submit-btn" onclick="executeAnalysis()">分析を実行する</button>
+        </div>
+
+        <div class="divider">または</div>
+
+        <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+            <div style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">画面のどこにJSONファイルをドロップしても読み込めます</div>
+            <div style="font-size: 13px;">（この枠をクリックしてファイルを選択することもできます）</div>
+            <input type="file" id="file-input" accept=".json" style="display:none;" onchange="handleFileSelect(event)">
+        </div>
+    </div>
+
+    <div class="app-container" id="dashboard">
+        
+        <div class="top-gauge-container">
+            <div class="gauge-main-row">
+                <div class="side-id-label blue-side" id="blue-id">-</div>
+                
+                <div class="gauge-center-zone">
+                    <div class="win-rate-numbers">
+                        <span class="rate-blue" id="blue-rate-text">-%</span>
+                        <div class="theme-in-center" id="debate-theme">-</div>
+                        <span class="rate-red" id="red-rate-text">-%</span>
+                    </div>
+                    <div class="gauge-wrapper">
+                        <div class="gauge-center-line"></div>
+                        <div class="gauge-bar-blue" id="blue-bar"></div>
+                        <div class="gauge-bar-red" id="red-bar"></div>
+                    </div>
+                </div>
+                
+                <div class="side-id-label red-side" id="red-id">-</div>
+            </div>
+        </div>
+
+        <div class="main-columns">
+            
+            <div class="camp-block blue-claims-block">
+                <div class="block-title">主張</div>
+                <div class="claims-vertical-list" id="blue-claims"></div>
+            </div>
+
+            <div class="camp-block red-claims-block">
+                <div class="block-title">主張</div>
+                <div class="claims-vertical-list" id="red-claims"></div>
+            </div>
+
+            <div class="camp-block blue-metrics-block">
+                <div class="block-title">評価のポイント</div>
+                <div class="metrics-vertical-list" id="blue-metrics"></div>
+            </div>
+
+            <div class="camp-block red-metrics-block">
+                <div class="block-title">評価のポイント</div>
+                <div class="metrics-vertical-list" id="red-metrics"></div>
+            </div>
+
+        </div>
+
+        <div class="summary-panel">
+            <div class="summary-title-text">総合評価</div>
+            <div class="summary-body" id="verdict-desc">-</div>
+        </div>
+    </div>
+
+    <div id="context-menu">
+        <div class="context-item" id="menu-save-json" onclick="saveAsJson()">JSONを保存</div>
+        <div class="context-item" id="menu-save-img" onclick="saveAsImage()">画像を保存</div>
+    </div>
+
+    <script>
+        let currentAnalysisData = null;
+
+        const numIcons = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾', '❿'];
+
+        const svgs = {
+            brain: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>`,
+            doc: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`,
+            shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`
+        };
+
+        function getTimestampStr() {
+            const d = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+        }
+
+        async function executeAnalysis() {
+            const apiKey = document.getElementById('api-key').value.trim();
+            const bgText = document.getElementById('background-text').value.trim();
+            const debateText = document.getElementById('debate-text').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            const btn = document.getElementById('btn-analyze');
+
+            if (!apiKey) { showError("API Keyを入力してください。"); return; }
+            if (!debateText) { showError("議論の本文を入力してください。"); return; }
+            
+            errorMsg.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = "分析中... (数秒かかります)";
+
+            try {
+                let prompt = window.PROMPT_TEMPLATE || "前提:\n[BACKGROUND_TEXT]\n\n本文:\n[DISCUSSION_TEXT]";
+                const schemaStr = window.JSON_SCHEMA || null;
+
+                prompt = prompt.replace("[BACKGROUND_TEXT]", bgText || "特になし");
+                prompt = prompt.replace("[DISCUSSION_TEXT]", debateText);
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+                
+                const body = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                };
+
+                if (schemaStr) {
+                    body.generationConfig.responseSchema = schemaStr;
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) throw new Error(`API通信エラー: ${response.status} ${response.statusText}`);
+
+                const data = await response.json();
+                const jsonStr = data.candidates[0].content.parts[0].text;
+                const resultObj = JSON.parse(jsonStr);
+
+                renderDashboard(resultObj);
+
+            } catch (err) {
+                console.error(err);
+                showError(`エラーが発生しました: ${err.message}`);
+                btn.disabled = false;
+                btn.textContent = "分析を実行する";
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    renderDashboard(JSON.parse(e.target.result));
+                } catch (err) {
+                    showError("JSONファイルの解析に失敗しました。正しいフォーマットか確認してください。");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) processFile(file);
+        }
+
+        let dragCounter = 0;
+        
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            document.getElementById('drop-zone').classList.add('dragover');
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) {
+                document.getElementById('drop-zone').classList.remove('dragover');
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            document.getElementById('drop-zone').classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) processFile(file);
+        });
+
+        function renderDashboard(data) {
+            currentAnalysisData = data; 
+
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'flex';
+
+            const themeTxt = data["議論のテーマ"];
+            document.getElementById('debate-theme').textContent = themeTxt;
+            document.getElementById('debate-theme').title = themeTxt;
+            
+            document.getElementById('blue-id').textContent = data["陣営・青"]["主な人物"] || "-";
+            document.getElementById('red-id').textContent = data["陣営・赤"]["主な人物"] || "-";
+
+            const blueVal = parseFloat(data["総合的評価"]["評価値"]);
+            const bluePct = Math.round(blueVal * 100);
+            const redPct = 100 - bluePct;
+
+            document.getElementById('blue-rate-text').textContent = bluePct + '%';
+            document.getElementById('red-rate-text').textContent = redPct + '%';
+            document.getElementById('blue-bar').style.width = bluePct + '%';
+            document.getElementById('red-bar').style.width = redPct + '%';
+
+            document.getElementById('blue-claims').innerHTML = data["陣営・青"]["主張"].map((c, i) => `
+                <div class="claim-text-item">
+                    <span class="claim-num-icon">${numIcons[i] || (i + 1)}</span>
+                    <span class="claim-text-content" title="${c}">${c}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('red-claims').innerHTML = data["陣営・赤"]["主張"].map((c, i) => `
+                <div class="claim-text-item">
+                    <span class="claim-num-icon">${numIcons[i] || (i + 1)}</span>
+                    <span class="claim-text-content" title="${c}">${c}</span>
+                </div>
+            `).join('');
+
+            const bEval = data["陣営・青"]["評価"];
+            document.getElementById('blue-metrics').innerHTML = 
+                renderMetricRow('論理的思考力', 'brain', bEval["論理的思考力"], 'var(--color-blue)') +
+                renderMetricRow('文章読解力', 'doc', bEval["文章読解力"], 'var(--color-blue)') +
+                renderMetricRow('根拠の信頼性', 'shield', bEval["根拠の信頼性"], 'var(--color-blue)');
+
+            const rEval = data["陣営・赤"]["評価"];
+            document.getElementById('red-metrics').innerHTML = 
+                renderMetricRow('論理的思考力', 'brain', rEval["論理的思考力"], 'var(--color-red)') +
+                renderMetricRow('文章読解力', 'doc', rEval["文章読解力"], 'var(--color-red)') +
+                renderMetricRow('根拠の信頼性', 'shield', rEval["根拠の信頼性"], 'var(--color-red)');
+
+            document.getElementById('verdict-desc').innerHTML = highlightVerdict(data["総合的評価"]["理由説明"]);
+        }
+
+        function generateDotMeterHtml(score, activeColor) {
+            let dotsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                let fillPercent = 0;
+                if (score >= i) {
+                    fillPercent = 100;
+                } else if (score > i - 1) {
+                    fillPercent = Math.round((score - (i - 1)) * 100);
+                }
+                
+                const backgroundStyle = fillPercent === 100 
+                    ? `background: ${activeColor}; box-shadow: 0 0 4px ${activeColor};` 
+                    : fillPercent > 0 
+                        ? `background: linear-gradient(90deg, ${activeColor} ${fillPercent}%, #1e293b ${fillPercent}%);`
+                        : `background: #1e293b;`;
+
+                dotsHtml += `<div class="score-dot" style="${backgroundStyle}"></div>`;
+            }
+            return `<div class="dot-meter">${dotsHtml}</div>`;
+        }
+
+        function renderMetricRow(label, iconKey, scoreData, activeColor) {
+            const score = parseFloat(scoreData.点数);
+            const reasonText = scoreData.理由説明;
+            return `
+                <div class="metric-row">
+                    <div class="metric-icon-box">${svgs[iconKey]}</div>
+                    <div class="metric-right-main-block">
+                        <div class="metric-upper-row">
+                            <div class="metric-label">${label}</div>
+                            ${generateDotMeterHtml(score, activeColor)}
+                        </div>
+                        <div class="metric-lower-row">
+                            <div class="metric-desc">${reasonText}</div>
+                            <div class="score-numeric-box">
+                                ${score.toFixed(1)}<span class="score-max-label">/5.0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function highlightVerdict(text) {
+            if (!text) return "";
+            return text
+                .replace(/(青陣営|青)/g, '<span class="highlight-blue">$1</span>')
+                .replace(/(赤陣営|赤)/g, '<span class="highlight-red">$1</span>');
+        }
+
+        const menu = document.getElementById('context-menu');
+
+        document.addEventListener('contextmenu', (e) => {
+            if (document.getElementById('dashboard').style.display !== 'none') {
+                e.preventDefault(); 
+                
+                const saveJsonItem = document.getElementById('menu-save-json');
+                if (typeof window.ALLOW_SAVE_JSON !== 'undefined' && window.ALLOW_SAVE_JSON === false) {
+                    saveJsonItem.style.display = 'none';
+                }
+
+                menu.style.left = `${e.clientX}px`;
+                menu.style.top = `${e.clientY}px`;
+                menu.style.display = 'flex';
+            }
+        });
+
+        document.addEventListener('click', () => {
+            menu.style.display = 'none';
+        });
+
+        function saveAsJson() {
+            if (!currentAnalysisData) return;
+            const jsonStr = JSON.stringify(currentAnalysisData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${getTimestampStr()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function saveAsImage() {
+            const targetNode = document.body;
+            if (typeof html2canvas === 'undefined') {
+                alert("画像保存ライブラリ(html2canvas)が読み込まれていません。");
+                return;
+            }
+            
+            setTimeout(() => {
+                html2canvas(targetNode, {
+                    backgroundColor: "#03060f", 
+                    scale: 1 
+                }).then(canvas => {
+                    const url = canvas.toDataURL("image/png");
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${getTimestampStr()}.png`;
+                    a.click();
+                }).catch(err => {
+                    console.error(err);
+                    alert("画像の保存に失敗しました。");
+                });
+            }, 100);
+        }
+
+    </script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</body>
+</html>
