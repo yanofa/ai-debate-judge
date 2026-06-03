@@ -55,7 +55,6 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            display: none;
         }
         .form-group {
             display: flex;
@@ -108,7 +107,6 @@
             color: #475569;
             font-size: 14px;
             margin: 8px 0;
-            display: none;
         }
         .divider::before, .divider::after {
             content: "";
@@ -442,12 +440,85 @@
         }
         .highlight-blue { color: var(--color-blue); font-weight: 800; }
         .highlight-red { color: var(--color-red); font-weight: 800; }
+
+.setup-panel.howtouse {
+    background: linear-gradient(180deg, #0b1120 0%, #090d1a 100%);
+    border: 1px solid #334155;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.08);
+    gap: 12px;
+}
+
+.setup-panel.howtouse h2 {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    margin-bottom: 2px;
+}
+
+.setup-panel.howtouse h2 a {
+    color: #ffffff;
+    text-decoration: underline;
+    text-decoration-color: rgba(255,255,255,0.65);
+    text-underline-offset: 2px;
+}
+
+.setup-panel.howtouse h2 a:hover {
+    color: #e2e8f0;
+}
+
+.setup-panel.howtouse h3 {
+    font-size: 16px;
+    color: var(--text-muted);
+    font-weight: 800;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 4px;
+}
+
+.setup-panel.howtouse ol {
+    padding-left: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #e2e8f0;
+    line-height: 1.55;
+    font-size: 14px;
+}
+
+.setup-panel.howtouse li::marker {
+    color: var(--color-blue);
+    font-weight: bold;
+}
+
+.setup-panel.howtouse a {
+    color: var(--color-blue);
+    text-decoration: underline;
+    text-decoration-color: rgba(56,189,248,0.5);
+    text-underline-offset: 2px;
+}
+
+.setup-panel.howtouse strong {
+    color: #ffffff;
+}
+
     </style>
 </head>
 <body>
 
     <div id="setup-screen">
-        <div class="setup-panel">
+        <div class="setup-panel howtouse">
+            <h2><a href="https://github.com/yanofa/ai-debate-judge">AI議論判定</a></h2>
+            <h3>使い方</h3>
+            <ol>
+                <li>Google AI Studio にログイン</li>
+                <li>右下の <strong>Structured Output</strong> を有効化し、<strong>Code Editor</strong> に <a href="https://raw.githubusercontent.com/yanofa/ai-debate-judge/refs/heads/main/schema.json">schema.json</a> の内容をを貼り付ける</li>
+                <li><a href="https://raw.githubusercontent.com/yanofa/ai-debate-judge/refs/heads/main/prompt_template.txt">prompt_template.txt</a> の「前提となる話題」「議論の本文」を記入して Google AI Studio のチャットで送信</li>
+                <li>返ってきたJSONをダウンロード</li>
+                <li>このページでJSONを読み込む</li>
+                <li>表示結果を右クリックから画像保存する</li>
+            </ol>
+        </div>
+        
+        <div class="setup-panel" style="display:none;">
             <div class="form-group">
                 <label class="form-label" for="api-key">Gemini API Key</label>
                 <input type="password" id="api-key" class="form-input" placeholder="AIzaSy...">
@@ -468,7 +539,7 @@
             <button id="btn-analyze" class="submit-btn" onclick="executeAnalysis()">分析を実行する</button>
         </div>
 
-        <div class="divider">または</div>
+        <div class="divider" style="display:none;">または</div>
 
         <div id="drop-zone" onclick="document.getElementById('file-input').click()">
             <div style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">画面のどこにJSONファイルをドロップしても読み込めます</div>
