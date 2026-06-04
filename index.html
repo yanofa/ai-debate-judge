@@ -448,25 +448,25 @@
     gap: 12px;
 }
 
-.setup-panel.howtouse h2 {
+.setup-panel.howtouse h1 {
     font-size: 24px;
     font-weight: 900;
     letter-spacing: 0.03em;
     margin-bottom: 2px;
 }
 
-.setup-panel.howtouse h2 a {
+.setup-panel.howtouse h1 a {
     color: #ffffff;
     text-decoration: underline;
     text-decoration-color: rgba(255,255,255,0.65);
     text-underline-offset: 2px;
 }
 
-.setup-panel.howtouse h2 a:hover {
+.setup-panel.howtouse h1 a:hover {
     color: #e2e8f0;
 }
 
-.setup-panel.howtouse h3 {
+.setup-panel.howtouse h2 {
     font-size: 16px;
     color: var(--text-muted);
     font-weight: 800;
@@ -474,7 +474,8 @@
     padding-bottom: 4px;
 }
 
-.setup-panel.howtouse ol {
+.setup-panel.howtouse ol,
+.setup-panel.howtouse ul {
     padding-left: 22px;
     display: flex;
     flex-direction: column;
@@ -506,8 +507,8 @@
 
     <div id="setup-screen">
         <div class="setup-panel howtouse">
-            <h2><a href="https://github.com/yanofa/ai-debate-judge">AI議論判定</a></h2>
-            <h3>使い方</h3>
+            <h1><a href="https://github.com/yanofa/ai-debate-judge">AI議論判定</a></h1>
+            <h2>使い方</h2>
             <ol>
                 <li><a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a> にログイン</li>
                 <li>右下の <strong>Structured Output</strong> を有効化し、<strong>Code Editor</strong> に <a href="https://raw.githubusercontent.com/yanofa/ai-debate-judge/refs/heads/main/schema.json" target="_blank">schema.json</a> の内容をを貼り付ける</li>
@@ -516,6 +517,10 @@
                 <li>このページでJSONを読み込む</li>
                 <li>表示結果を右クリックから画像保存する</li>
             </ol>
+            <h2>注意</h2>
+            <ul>
+                <li>URL（画像を含む）のリンク先の情報は読み取りません。議論の理解に必要な情報がリンク先にある場合は、その内容を「前提となる話題」に記載してください。</li>
+            </ul>
         </div>
         
         <div class="setup-panel" style="display:none;">
