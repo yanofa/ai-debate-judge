@@ -2,6 +2,8 @@
 
 Geminiで生成した議論判定JSONを表示・画像保存するためのツールです。
 
+![](images/example.png)
+
 ## 含まれるファイル
 
 * `schema.json` — 議論判定JSONのSchema定義
