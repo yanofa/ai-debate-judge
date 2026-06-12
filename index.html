@@ -609,6 +609,7 @@
     <div id="context-menu">
         <div class="context-item" id="menu-save-json" onclick="saveAsJson()">JSONを保存</div>
         <div class="context-item" id="menu-save-img" onclick="saveAsImage()">画像を保存</div>
+        <div class="context-item" id="menu-copy-img" onclick="saveAsImage(false)">画像をコピー</div>
     </div>
 
     <script>
@@ -869,7 +870,7 @@
             URL.revokeObjectURL(url);
         }
 
-        function saveAsImage() {
+        function saveAsImage(isSave = true) {
             const targetNode = document.body;
             if (typeof html2canvas === 'undefined') {
                 alert("画像保存ライブラリ(html2canvas)が読み込まれていません。");
@@ -881,14 +882,32 @@
                     backgroundColor: "#03060f", 
                     scale: 1 
                 }).then(canvas => {
-                    const url = canvas.toDataURL("image/png");
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${getTimestampStr()}.png`;
-                    a.click();
+                    if (isSave) {
+                        // ダウンロード処理 (デフォルト)
+                        const url = canvas.toDataURL("image/png");
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${getTimestampStr()}.png`;
+                        a.click();
+                    } else {
+                        // クリップボードへのコピー処理
+                        canvas.toBlob(blob => {
+                            if (!blob) return;
+                            try {
+                                const item = new ClipboardItem({ "image/png": blob });
+                                navigator.clipboard.write([item]).catch(err => {
+                                    console.error(err);
+                                    alert("クリップボードへのコピーに失敗しました。ブラウザの権限を確認してください。");
+                                });
+                            } catch (err) {
+                                console.error(err);
+                                alert("お使いのブラウザはクリップボードへの画像コピーをサポートしていません。");
+                            }
+                        }, "image/png");
+                    }
                 }).catch(err => {
                     console.error(err);
-                    alert("画像の保存に失敗しました。");
+                    alert("画像の生成に失敗しました。");
                 });
             }, 100);
         }
